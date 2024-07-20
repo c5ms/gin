@@ -278,16 +278,19 @@ func TestRouteParamsByName(t *testing.T) {
 	name := ""
 	lastName := ""
 	wild := ""
+	id := 0
 	router := New()
-	router.GET("/test/:name/:last_name/*wild", func(c *Context) {
+	router.GET("/test/:name/:last_name/:id/*wild", func(c *Context) {
 		name = c.Params.ByName("name")
 		lastName = c.Params.ByName("last_name")
+		id = c.params.GetInt("id")
 		var ok bool
 		wild, ok = c.Params.Get("wild")
 
 		assert.True(t, ok)
 		assert.Equal(t, name, c.Param("name"))
 		assert.Equal(t, lastName, c.Param("last_name"))
+		assert.Equal(t, id, c.ParamInt("id"))
 
 		assert.Empty(t, c.Param("wtf"))
 		assert.Empty(t, c.Params.ByName("wtf"))
@@ -297,12 +300,13 @@ func TestRouteParamsByName(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	w := PerformRequest(router, http.MethodGet, "/test/john/smith/is/super/great")
+	w := PerformRequest(router, http.MethodGet, "/test/john/smith/32/is/super/great")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "john", name)
 	assert.Equal(t, "smith", lastName)
 	assert.Equal(t, "/is/super/great", wild)
+	assert.Equal(t, 32, id)
 }
 
 // TestContextParamsGet tests that a parameter can be parsed from the URL even with extra slashes.
@@ -310,17 +314,20 @@ func TestRouteParamsByNameWithExtraSlash(t *testing.T) {
 	name := ""
 	lastName := ""
 	wild := ""
+	id := 0
 	router := New()
 	router.RemoveExtraSlash = true
-	router.GET("/test/:name/:last_name/*wild", func(c *Context) {
+	router.GET("/test/:name/:last_name/:id/*wild", func(c *Context) {
 		name = c.Params.ByName("name")
 		lastName = c.Params.ByName("last_name")
+		id = c.params.GetInt("id")
 		var ok bool
 		wild, ok = c.Params.Get("wild")
 
 		assert.True(t, ok)
 		assert.Equal(t, name, c.Param("name"))
 		assert.Equal(t, lastName, c.Param("last_name"))
+		assert.Equal(t, id, c.ParamInt("id"))
 
 		assert.Empty(t, c.Param("wtf"))
 		assert.Empty(t, c.Params.ByName("wtf"))
@@ -328,9 +335,10 @@ func TestRouteParamsByNameWithExtraSlash(t *testing.T) {
 		wtf, ok := c.Params.Get("wtf")
 		assert.Empty(t, wtf)
 		assert.False(t, ok)
+
 	})
 
-	w := PerformRequest(router, http.MethodGet, "//test//john//smith//is//super//great")
+	w := PerformRequest(router, http.MethodGet, "//test//john//smith//32//is//super//great")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "john", name)
@@ -343,23 +351,21 @@ func TestRouteParamsByNameWithExtraSlash(t *testing.T) {
 // initialisation (which happened in a previous requests).
 func TestRouteParamsNotEmpty(t *testing.T) {
 	name := ""
+	age := 0
 	lastName := ""
 	wild := ""
 	router := New()
-
-	w := PerformRequest(router, http.MethodGet, "/test/john/smith/is/super/great")
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-
-	router.GET("/test/:name/:last_name/*wild", func(c *Context) {
+	router.GET("/test/:name/:last_name/:age/*wild", func(c *Context) {
 		name = c.Params.ByName("name")
 		lastName = c.Params.ByName("last_name")
+		age = c.Params.GetInt("age")
 		var ok bool
 		wild, ok = c.Params.Get("wild")
 
 		assert.True(t, ok)
 		assert.Equal(t, name, c.Param("name"))
 		assert.Equal(t, lastName, c.Param("last_name"))
+		assert.Equal(t, age, c.ParamInt("age"))
 
 		assert.Empty(t, c.Param("wtf"))
 		assert.Empty(t, c.Params.ByName("wtf"))
@@ -369,7 +375,7 @@ func TestRouteParamsNotEmpty(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	w = PerformRequest(router, http.MethodGet, "/test/john/smith/is/super/great")
+	w := PerformRequest(router, http.MethodGet, "/test/john/smith/32/is/super/great")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "john", name)
